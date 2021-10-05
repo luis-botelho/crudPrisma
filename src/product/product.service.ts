@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -6,9 +7,27 @@ import { UpdateProductDto } from './dto/update-product.dto';
 @Injectable()
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
+  private readonly _include = {
+    images: {
+      select: {
+        id: false,
+        url: true,
+      },
+    },
+  };
 
-  create(data: CreateProductDto) {
-    return this.prisma.product.create({ data, include: { images: true } });
+  create(dto: CreateProductDto) {
+    const data: Prisma.ProductCreateInput = {
+      ...dto,
+      images: {
+        create: dto.images,
+      },
+    };
+
+    return this.prisma.product.create({
+      data,
+      include: this._include,
+    });
   }
 
   findAll() {
@@ -20,7 +39,7 @@ export class ProductService {
   findOne(id: number) {
     return this.prisma.product.findUnique({
       where: { id },
-      include: { images: true },
+      include: this._include,
     });
   }
 
@@ -32,11 +51,6 @@ export class ProductService {
   }
 
   remove(id: number) {
-   
-    const imgId = this.prisma.image.ImageSelect.id;
-    return this.prisma.product.delete({
-      where: { id },
-      include: { images: { select: { imgId } } },
-    });
+    return this.prisma.product.delete({ where: { id } });
   }
 }

@@ -15,9 +15,23 @@ const prisma_service_1 = require("../prisma/prisma.service");
 let ProductService = class ProductService {
     constructor(prisma) {
         this.prisma = prisma;
+        this._include = {
+            images: {
+                select: {
+                    id: false,
+                    url: true,
+                },
+            },
+        };
     }
-    create(data) {
-        return this.prisma.product.create({ data, include: { images: true } });
+    create(dto) {
+        const data = Object.assign(Object.assign({}, dto), { images: {
+                create: dto.images,
+            } });
+        return this.prisma.product.create({
+            data,
+            include: this._include,
+        });
     }
     findAll() {
         return this.prisma.product.findMany({
@@ -27,7 +41,7 @@ let ProductService = class ProductService {
     findOne(id) {
         return this.prisma.product.findUnique({
             where: { id },
-            include: { images: true },
+            include: this._include,
         });
     }
     update(id, data) {
@@ -37,11 +51,7 @@ let ProductService = class ProductService {
         });
     }
     remove(id) {
-        const imgId = this.prisma.image.ImageSelect.id;
-        return this.prisma.product.delete({
-            where: { id },
-            include: { images: { select: { imgId } } },
-        });
+        return this.prisma.product.delete({ where: { id } });
     }
 };
 ProductService = __decorate([
